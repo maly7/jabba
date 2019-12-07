@@ -3,14 +3,12 @@ $ErrorActionPreference = "Stop"
 $jabbaHome = If ($env:JABBA_HOME) { $env:JABBA_HOME } else { If ($env:JABBA_DIR) { $env:JABBA_DIR } else { "$env:USERPROFILE\.jabba" } }
 $jabbaVersion = If ($env:JABBA_VERSION) { $env:JABBA_VERSION } else { "latest" }
 
-If ($jabbaVersion -eq "latest")
-{
+If ($jabbaVersion -eq "latest") {
     # resolving "latest" to an actual tag
-    $jabbaVersion = [System.Text.Encoding]::UTF8.GetString((wget https://shyiko.github.com/jabba/latest -UseBasicParsing).Content).Trim()
+    $jabbaVersion = [System.Text.Encoding]::UTF8.GetString((Invoke-WebRequest https://shyiko.com/jabba/latest -UseBasicParsing).Content).Trim()
 }
 
-If ($jabbaVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.+-]+)?$')
-{
+If ($jabbaVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.+-]+)?$') {
     echo "'$jabbaVersion' is not a valid version."
     exit 1
 }
@@ -20,21 +18,18 @@ echo ""
 
 mkdir -Force $jabbaHome/bin | Out-Null
 
-If ($env:JABBA_MAKE_INSTALL -eq "true")
-{
+If ($env:JABBA_MAKE_INSTALL -eq "true") {
     cp jabba.exe $jabbaHome/bin
 }
-else
-{
-    wget https://github.com/shyiko/jabba/releases/download/$jabbaVersion/jabba-$jabbaVersion-windows-amd64.exe -UseBasicParsing -OutFile $jabbaHome/bin/jabba.exe
+else {
+    Invoke-WebRequest https://github.com/shyiko/jabba/releases/download/$jabbaVersion/jabba-$jabbaVersion-windows-amd64.exe -UseBasicParsing -OutFile $jabbaHome/bin/jabba.exe
 }
 
-$ErrorActionPreference="SilentlyContinue"
+$ErrorActionPreference = "SilentlyContinue"
 & $jabbaHome\bin\jabba.exe --version | Out-Null
 $binaryValid = $?
-$ErrorActionPreference="Continue"
-if (-not $binaryValid)
-{
+$ErrorActionPreference = "Continue"
+if (-not $binaryValid) {
     echo "$jabbaHome\bin\jabba does not appear to be a valid binary.
 
 Check your Internet connection / proxy settings and try again.
@@ -59,20 +54,17 @@ function jabba
 }
 "@ > $jabbaHome/jabba.ps1
 
-$sourceJabba="if (Test-Path `"$jabbaHome\jabba.ps1`") { . `"$jabbaHome\jabba.ps1`" }"
+$sourceJabba = "if (Test-Path `"$jabbaHome\jabba.ps1`") { . `"$jabbaHome\jabba.ps1`" }"
 
-if (-not $(Test-Path $profile))
-{
+if (-not $(Test-Path $profile)) {
     New-Item -path $profile -type file -force | Out-Null
 }
 
-if ("$(cat $profile | Select-String "\\jabba.ps1")" -eq "")
-{
+if ("$(cat $profile | Select-String "\\jabba.ps1")" -eq "") {
     echo "Adding source string to $profile"
     echo "`n$sourceJabba`n" >> "$profile"
 }
-else
-{
+else {
     echo "Skipped update of $profile (source string already present)"
 }
 
